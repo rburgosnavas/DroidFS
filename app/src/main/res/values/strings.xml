@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <string name="app_name">DroidFS</string>
+    <string name="hello_world">Hello world!</string>
+    <string name="action_settings">Settings</string>
+    <string name="action_recent_sounds">Recent Sounds</string>
+    <string name="action_me">Me</string>
+    <string name="action_my_packs">My Packs</string>
+    <string name="title_activity_recent_sounds">RecentSoundsActivity</string>
+    <string name="hello_blank_fragment">Hello blank fragment</string>
+    <string name="sound_img_description">sound image</string>
+    <string name="action_refresh_token">Refresh Token</string>
+    <string name="sync_adapter_authority">com.rburgosnavas.droifs.provider</string>
+    <string name="sync_account_type">com.rburgosnavas.droifs</string>
+
+</resources>

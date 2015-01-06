@@ -1,0 +1,21 @@
+-- After pressing 'auth' button login WebView comes up
+
+WebView$onPageStarted ->  url = https://www.freesound.org/apiv2/oauth2/authorize/?client_id=942069879bd8da300e19&response_type=code&state=droidfs
+WebView$onLoadResource -> url = https://www.freesound.org/apiv2/oauth2/authorize/?client_id=942069879bd8da300e19&response_type=code&state=droidfs
+WebView$onPageStarted ->  url = https://www.freesound.org/apiv2/login/?next=https%3A//www.freesound.org/apiv2/oauth2/authorize/%3Fclient_id%3D942069879bd8da300e19%26response_type%3Dcode%26state%3Ddroidfs
+WebView$onLoadResource -> url = https://www.freesound.org/media/images/logo.png
+WebView$onPageFinished -> url = https://www.freesound.org/apiv2/login/?next=https%3A//www.freesound.org/apiv2/oauth2/authorize/%3Fclient_id%3D942069879bd8da300e19%26response_type%3Dcode%26state%3Ddroidfs
+WebView$onLoadResource -> url = https://www.freesound.org/favicon.ico
+
+-- After login
+
+WebView$onPageStarted ->  url = https://www.freesound.org/apiv2/login/
+WebView$onLoadResource -> url = https://www.freesound.org/apiv2/login/
+WebView$onPageStarted ->  url = https://www.freesound.org/apiv2/oauth2/authorize/?client_id=942069879bd8da300e19&response_type=code&state=droidfs
+WebView$onPageStarted ->  url = https://www.freesound.org/apiv2/oauth2/authorize/confirm/?original_path=/apiv2/oauth2/authorize/%3Fclient_id%3D942069879bd8da300e19%26response_type%3Dcode%26state%3Ddroidfs
+WebView$onPageStarted ->  url = https://www.freesound.org/apiv2/oauth2/redirect/?original_path=/apiv2/oauth2/authorize/%3Fclient_id%3D942069879bd8da300e19%26response_type%3Dcode%26state%3Ddroidfs
+WebView$onPageStarted ->  url = https://www.freesound.org/home/app_permissions/permission_granted/?original_path=%2Fapiv2%2Foauth2%2Fauthorize%2F%3Fclient_id%3D942069879bd8da300e19%26response_type%3Dcode%26state%3Ddroidfs&state=droidfs&code=fe1f36fc580cea0992984c6d30b913174bc4117d
+WebView$onPageFinished -> url = https://www.freesound.org/home/app_permissions/permission_granted/?original_path=%2Fapiv2%2Foauth2%2Fauthorize%2F%3Fclient_id%3D942069879bd8da300e19%26response_type%3Dcode%26state%3Ddroidfs&state=droidfs&code=fe1f36fc580cea0992984c6d30b913174bc4117d
+CODE = fe1f36fc580cea0992984c6d30b913174bc4117d
+WebView$onLoadResource -> url = https://www.freesound.org/favicon.ico
+RESPONSE = {"access_token": "b652081c0a54b6ac2eed2ef7acd3a6e3653f3766", "token_type": "Bearer", "expires_in": 86399, "refresh_token": "5c95808376a2ed00f0458b237c16363917ab788e", "scope": "read write read+write"}

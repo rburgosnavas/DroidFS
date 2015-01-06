@@ -1,0 +1,15 @@
+===================================================================================================
+| DATABASE                                                                                        |
+===================================================================================================
+
+* user: store 'me' information
+* user_sounds: store 'me' sounds
+* user_packs: store 'me' packs
+* user_bookmark_categories: store 'me' bookmark categories
+
+===================================================================================================
+| LOGIN FLOW                                                                                      |
+===================================================================================================
+-- Since you can't really do anything exciting if you don't login (download, upload, etc.),
+-- let's force user to login.
+
