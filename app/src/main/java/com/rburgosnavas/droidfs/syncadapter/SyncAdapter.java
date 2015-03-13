@@ -1,7 +1,6 @@
 package com.rburgosnavas.droidfs.syncadapter;
 
 import android.accounts.Account;
-import android.app.Notification;
 import android.app.NotificationManager;
 import android.content.AbstractThreadedSyncAdapter;
 import android.content.ContentProviderClient;
@@ -23,11 +22,11 @@ import java.io.IOException;
 import java.util.Calendar;
 
 /**
- * Created by rburgosnavas on 12/11/14.
+ * http://developer.android.com/training/sync-adapter/index.html
  */
 public class SyncAdapter extends AbstractThreadedSyncAdapter{
     private static final String TAG = SyncAdapter.class.getSimpleName();
-    private SharedPreferences prefs;
+    private final SharedPreferences prefs;
 
     public SyncAdapter(Context context, boolean autoInitialize) {
         super(context, autoInitialize);
@@ -47,100 +46,91 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter{
                               ContentProviderClient provider, SyncResult syncResult) {
         Log.w(TAG, "performing sync");
 
-        if (prefs.contains("ACCESS_TOKEN")) {
-            long expiration = prefs.getLong("EXPIRATION_TIMESTAMP", -1);
+        if (!prefs.contains("ACCESS_TOKEN")) {
+            Log.e(TAG, "No ACCESS_TOKEN found!");
+            return;
+        }
 
-            if (AuthUtils.isExpired(expiration)) {
-                Log.w(TAG, "access_token=" + prefs.getString("ACCESS_TOKEN", "") + " expired.");
+        long expiration = prefs.getLong("EXPIRATION_TIMESTAMP", -1);
+        String accessCode = prefs.getString("ACCESS_TOKEN", "");
 
-                final String refreshToken = prefs.getString("REFRESH_TOKEN", "");
-                Log.w(TAG, "using refresh_token=" + refreshToken + " to validate.");
+        if (AuthUtils.isExpired(expiration)) {
+            Log.w(TAG, "access_token=" + accessCode + " expired.");
 
-                if (!"".equals(refreshToken)) {
-                    Log.i(TAG, "task to get new token from refresh_token");
+            final String refreshToken = prefs.getString("REFRESH_TOKEN", "");
+            Log.w(TAG, "using refresh_token=" + refreshToken + " to validate.");
 
-                    new AsyncTask<String, String, JsonObject>() {
-                        @Override
-                        protected void onPreExecute() {
-                            super.onPreExecute();
+            if (!"".equals(refreshToken)) {
+                Log.i(TAG, "getting new token from refresh_token");
+
+                new AsyncTask<String, String, JsonObject>() {
+
+                    @Override
+                    protected JsonObject doInBackground(String... params) {
+                        Log.i(TAG, "attempting to get new token!");
+
+                        String bodyString = null;
+                        try {
+                            Log.i(TAG, "getting refresh token");
+                            bodyString =
+                                    HttpAuthClient.getRefreshToken(params[0]).body().string();
+                            Log.i(TAG, "RESPONSE = " + bodyString);
+                        } catch (IOException e) {
+                            e.printStackTrace();
                         }
 
-                        @Override
-                        protected JsonObject doInBackground(String... params) {
-                            Log.i(TAG, "attempting to get new token!");
+                        return new JsonParser().parse(bodyString).getAsJsonObject();
+                    }
 
-                            String bodyString = null;
-                            try {
-                                Log.i(TAG, "getting refresh token");
-                                bodyString = HttpAuthClient.getRefreshToken(params[0]).body().string();
-                                Log.i(TAG, "RESPONSE = " + bodyString);
-                            } catch (IOException e) {
-                                e.printStackTrace();
-                            }
+                    @Override
+                    protected void onPostExecute(JsonObject token) {
+                        super.onPostExecute(token);
 
-                            JsonObject j = new JsonParser().parse(bodyString).getAsJsonObject();
+                        SharedPreferences.Editor editor = prefs.edit();
+                        editor.putString("ACCESS_TOKEN", token.get("access_token").getAsString());
 
-                            return j;
-                        }
+                        Calendar c = Calendar.getInstance();
+                        editor.putLong("ACCESS_TIMESTAMP", c.getTimeInMillis());
+                        Log.i(TAG, "new token accessed on " + c.getTime());
 
-                        @Override
-                        protected void onPostExecute(JsonObject token) {
-                            super.onPostExecute(token);
-                            SharedPreferences prefs = getContext().getSharedPreferences("OAUTH_PREFS", Context.MODE_PRIVATE);
-                            SharedPreferences.Editor editor = prefs.edit();
-                            editor.putString("ACCESS_TOKEN", token.get("access_token").getAsString());
+                        // int time = 100;
+                        int time = token.get("expires_in").getAsInt();
+                        c.set(Calendar.SECOND, time);
 
-                            Calendar c = Calendar.getInstance();
-                            editor.putLong("ACCESS_TIMESTAMP", c.getTimeInMillis());
-                            Log.i(TAG, "new token accessed on " + c.getTime());
+                        editor.putInt("EXPIRES_IN", time);
+                        editor.putLong("EXPIRATION_TIMESTAMP", c.getTimeInMillis());
+                        editor.putString("REFRESH_TOKEN", token.get("refresh_token").getAsString());
+                        editor.apply();
+                        Log.i(TAG, "new token saved (will expire on " + c.getTime() + ")");
 
-                            int time = token.get("expires_in").getAsInt();
-                            c.set(Calendar.SECOND, time);
+                        NotificationCompat.Builder builder = new NotificationCompat
+                                .Builder(getContext())
+                                .setSmallIcon(R.drawable.ic_launcher)
+                                .setContentTitle("DroidFS - Sync complete")
+                                .setContentText("Access token will expire on " + c.getTime())
+                                    /*.setVibrate(new long[]{0, 2000, 1000})*/;
 
-                            editor.putInt("EXPIRES_IN", time);
-                            editor.putLong("EXPIRATION_TIMESTAMP", c.getTimeInMillis());
-                            editor.putString("REFRESH_TOKEN", token.get("refresh_token").getAsString());
-                            editor.apply();
-                            Log.i(TAG, "new token saved (will expire on " + c.getTime() + ")");
-
-                            NotificationCompat.Builder builder = new NotificationCompat.Builder(getContext())
-                                    .setSmallIcon(R.drawable.ic_launcher)
-                                    .setContentTitle("DroidFS - Sync complete")
-                                    .setContentText("Access token will expire on " + c.getTime())
-                                    .setVibrate(new long[]{0, 200, 1000});
-
-                            NotificationManager manager = (NotificationManager) getContext().getSystemService(Context.NOTIFICATION_SERVICE);
-                            manager.notify(606, builder.build());
-                        }
-
-                        @Override
-                        protected void onProgressUpdate(String... values) {
-                            super.onProgressUpdate(values);
-                        }
-
-                        @Override
-                        protected void onCancelled(JsonObject jsonObject) {
-                            super.onCancelled(jsonObject);
-                        }
-                    }.execute(refreshToken);
-                }
-            } else {
-                String msg = prefs.getString("ACCESS_TOKEN", "");
-                if (!"".equals(msg)) {
-                    Log.i(TAG, "access_token=" + msg + " valid.");
-
-                    NotificationCompat.Builder builder = new NotificationCompat.Builder(getContext())
-                            .setSmallIcon(R.drawable.ic_launcher)
-                            .setContentTitle("DroidFS - Sync complete")
-                            .setContentText("Access token is still valid")
-                            .setVibrate(new long[]{0, 200, 1000});
-
-                    NotificationManager manager = (NotificationManager) getContext().getSystemService(Context.NOTIFICATION_SERVICE);
-                    manager.notify(606, builder.build());
-                } else {
-                    Log.w(TAG, "no access token found (need to log in)");
-                }
+                        NotificationManager manager = (NotificationManager) getContext()
+                                .getSystemService(Context.NOTIFICATION_SERVICE);
+                        manager.notify(606, builder.build());
+                    }
+                }.execute(refreshToken);
             }
+        } else if (!"".equals(accessCode)) {
+            Log.i(TAG, "access_token=" + accessCode + " valid.");
+
+            NotificationCompat.Builder builder = new NotificationCompat
+                    .Builder(getContext())
+                    .setSmallIcon(R.drawable.ic_launcher)
+                    .setContentTitle("DroidFS - Sync complete")
+                    .setContentText("Access token is still valid")
+                        /*.setVibrate(new long[]{0, 200, 1000})*/;
+
+            NotificationManager manager = (NotificationManager) getContext()
+                    .getSystemService(Context.NOTIFICATION_SERVICE);
+            manager.notify(606, builder.build());
+        } else {
+            Log.w(TAG, "no access token found (need to log in)");
         }
     }
 

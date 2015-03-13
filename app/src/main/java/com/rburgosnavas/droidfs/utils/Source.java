@@ -4,10 +4,13 @@ import android.os.Environment;
 import android.util.Log;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
 
 /**
  * File IO helper.
@@ -15,7 +18,7 @@ import java.io.OutputStream;
 public class Source {
     private static final String TAG = Source.class.getSimpleName();
     private static final String SEP = File.separator;
-    private static final String DROIDFS_DL_FOLDER = Environment.getExternalStorageDirectory() +
+    public static final String DROIDFS_DL_FOLDER = Environment.getExternalStorageDirectory() +
             SEP + "DroidFS";
 
     /**
@@ -117,6 +120,57 @@ public class Source {
     }
 
     // TODO Unzip pack file helper
+    public static void unzipPack(String userName, String packName, String fileName) {
+        makeDownloadDirectory();
+
+        if (userName == null || "".equals(userName)) {
+            throw new NullPointerException("User name is null or empty empty");
+        }
+
+        if (fileName == null || "".equals(fileName)) {
+            throw new NullPointerException("File name is null or empty.");
+        }
+
+        makeDirectory(DROIDFS_DL_FOLDER + SEP + userName);
+
+        if (packName != null && !"".equals(packName)) {
+            makeDirectory(DROIDFS_DL_FOLDER + SEP + userName + SEP + packName);
+        }
+
+        byte[] buffer = new byte[1024];
+
+        File file = new File(DROIDFS_DL_FOLDER + SEP + userName +
+                (packName != null && !"".equals(packName) ? SEP + packName : ""),
+                fileName);
+
+        try {
+            ZipInputStream zis = new ZipInputStream(new FileInputStream(file));
+
+            ZipEntry zipEntry = zis.getNextEntry();
+
+            while (zipEntry != null) {
+                String zipEntryFileName = zipEntry.getName();
+                File zipEntryFile = new File(file.getParent(), zipEntryFileName);
+
+                FileOutputStream fos = new FileOutputStream(zipEntryFile);
+                int len;
+
+                while ((len = zis.read(buffer)) > 0) {
+                    fos.write(buffer, 0, len);
+                }
+
+                fos.close();
+
+                zipEntry = zis.getNextEntry();
+            }
+
+            zis.closeEntry();
+            zis.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
     // TODO delete pack file helper
 
 }

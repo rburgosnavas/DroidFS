@@ -11,9 +11,12 @@ import com.rburgosnavas.droidfs.clients.LoginWebViewClient;
 import com.rburgosnavas.droidfs.constants.Constants;
 import com.rburgosnavas.droidfs.exceptions.NullCallbackException;
 import com.rburgosnavas.droidfs.models.TokenType;
+import com.rburgosnavas.droidfs.syncadapter.AuthTask;
 
 
-public class LoginActivity extends Activity implements LoginWebViewClient.OnAuthorizationCodeListener, AuthTask.AuthListener {
+public class LoginActivity extends Activity implements
+        LoginWebViewClient.OnAuthorizationCodeListener,
+        AuthTask.AuthListener {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -25,14 +28,15 @@ public class LoginActivity extends Activity implements LoginWebViewClient.OnAuth
         webView.clearFormData();
         webView.clearHistory();
         webView.getSettings().setSaveFormData(true);
+
         try {
-            webView.setWebViewClient(new LoginWebViewClient(LoginActivity.this));
+            webView.setWebViewClient(new LoginWebViewClient(this));
         } catch (NullCallbackException e) {
             e.printStackTrace();
         }
+
         webView.loadUrl(Constants.FS_OAUTH_AUTH_QUERY);
     }
-
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
@@ -54,7 +58,8 @@ public class LoginActivity extends Activity implements LoginWebViewClient.OnAuth
 
     @Override
     public void onAuthorizationCode(String authorizationCode) {
-        new AuthTask(getApplicationContext(), TokenType.ACCESS_TOKEN, this).execute(authorizationCode);
+        new AuthTask(getApplicationContext(), TokenType.ACCESS_TOKEN, this)
+                .execute(authorizationCode);
     }
 
     @Override
@@ -71,7 +76,5 @@ public class LoginActivity extends Activity implements LoginWebViewClient.OnAuth
     }
 
     @Override
-    public void onAuthCancelled() {
-
-    }
+    public void onAuthCancelled() { }
 }

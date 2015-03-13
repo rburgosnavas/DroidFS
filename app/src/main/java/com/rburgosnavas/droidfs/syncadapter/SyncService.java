@@ -5,6 +5,9 @@ import android.content.Intent;
 import android.os.IBinder;
 import android.util.Log;
 
+/**
+ * http://developer.android.com/training/sync-adapter/index.html
+ */
 public class SyncService extends Service {
     private static SyncAdapter syncAdapter = null;
     private static final Object syncAdapterLock = new Object();

@@ -46,7 +46,8 @@ public class ScheduledRecentSoundsReceiver extends BroadcastReceiver {
         // RecentSoundsService.
         alarmManager.setRepeating(AlarmManager.RTC_WAKEUP,
                 cal.getTimeInMillis(),
-                AlarmManager.INTERVAL_HALF_HOUR,
+                30 * 60 * 1000,
+                // AlarmManager.INTERVAL_HALF_HOUR,
                 pendingIntent);
     }
 }

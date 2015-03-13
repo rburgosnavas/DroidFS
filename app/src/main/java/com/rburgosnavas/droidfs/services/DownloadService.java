@@ -10,7 +10,6 @@ import com.rburgosnavas.droidfs.utils.Source;
 
 import java.io.IOException;
 
-import retrofit.client.Header;
 import retrofit.client.Response;
 
 /**
@@ -29,6 +28,7 @@ public class DownloadService extends IntentService {
         Log.i(TAG, "handling intent");
 
         String accessToken = intent.getStringExtra("ACCESS_TOKEN");
+        Log.i(TAG, "access_token = " + accessToken);
 
         // User, pack, and sound name needed to create directories and save file to disk.
         String userName = intent.getStringExtra("USER_NAME");

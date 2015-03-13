@@ -29,6 +29,8 @@
         android:icon="@drawable/ic_launcher"
         android:label="@string/app_name"
         android:theme="@style/AppTheme" >
+
+        <!-- StubProvider needed by the sync adapter framework -->
         <provider
             android:name=".syncadapter.provider.StubProvider"
             android:authorities="@string/sync_adapter_authority"
@@ -36,6 +38,8 @@
             android:syncable="true" >
         </provider>
 
+        <!-- ******** Services ******** -->
+        <!-- SyncService used by the sync adapter framework -->
         <service
             android:name=".syncadapter.SyncService"
             android:exported="true"
@@ -48,6 +52,9 @@
                 android:name="android.content.SyncAdapter"
                 android:resource="@xml/syncadapter" />
         </service>
+
+        <!-- Authenticator component
+        see http://developer.android.com/training/sync-adapter/index.html -->
         <service android:name=".syncadapter.AuthenticatorService" >
             <intent-filter>
                 <action android:name="android.accounts.AccountAuthenticator" />
@@ -58,6 +65,41 @@
                 android:resource="@xml/authenticator" />
         </service>
 
+        <service
+            android:name=".services.DownloadService"
+            android:exported="false" >
+        </service>
+
+        <service
+            android:name=".services.RecentSoundsService"
+            android:enabled="true"
+            android:exported="true"
+            android:label="RecentSoundsService" >
+        </service>
+
+        <!-- ******** Receivers ******** -->
+        <receiver
+            android:name=".receivers.ScheduledRecentSoundsReceiver"
+            android:enabled="true"
+            android:exported="true" >
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+            </intent-filter>
+        </receiver>
+
+        <receiver
+            android:name=".receivers.StartRecentSoundsServiceReceiver"
+            android:enabled="true"
+            android:exported="true" >
+        </receiver>
+
+        <receiver
+            android:name=".receivers.RecentSoundsResultsReceiver"
+            android:enabled="true"
+            android:exported="true" >
+        </receiver>
+
+        <!-- ******** Activities ******** -->
         <activity
             android:name=".MainActivity"
             android:label="@string/app_name" >
@@ -67,47 +109,17 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
         <activity
             android:name=".RecentSoundsActivity"
             android:label="@string/title_activity_recent_sounds" >
         </activity>
-
-        <service
-            android:name=".services.DownloadService"
-            android:exported="false" >
-        </service>
 
         <activity
             android:name=".LoginActivity"
             android:label="@string/title_activity_login"
             android:windowSoftInputMode="adjustResize|stateHidden" >
         </activity>
-
-        <service
-            android:name=".services.RecentSoundsService"
-            android:enabled="true"
-            android:exported="true"
-            android:label="RecentSoundsService" >
-        </service>
-
-        <receiver
-            android:name=".receivers.ScheduledRecentSoundsReceiver"
-            android:enabled="true"
-            android:exported="true" >
-            <intent-filter>
-                <action android:name="android.intent.action.BOOT_COMPLETED" />
-            </intent-filter>
-        </receiver>
-        <receiver
-            android:name=".receivers.StartRecentSoundsServiceReceiver"
-            android:enabled="true"
-            android:exported="true" >
-        </receiver>
-        <receiver
-            android:name=".receivers.RecentSoundsResultsReceiver"
-            android:enabled="true"
-            android:exported="true" >
-        </receiver>
     </application>
 
 </manifest>

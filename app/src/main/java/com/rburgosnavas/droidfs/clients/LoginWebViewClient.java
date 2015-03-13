@@ -20,6 +20,7 @@ public class LoginWebViewClient extends WebViewClient {
         if (callback == null) {
             throw new NullCallbackException("LoginCallback is null or not implemented");
         }
+
         this.callback = callback;
     }
 

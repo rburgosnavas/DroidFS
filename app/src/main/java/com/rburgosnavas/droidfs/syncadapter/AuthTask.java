@@ -1,4 +1,4 @@
-package com.rburgosnavas.droidfs;
+package com.rburgosnavas.droidfs.syncadapter;
 
 import android.content.Context;
 import android.content.SharedPreferences;
@@ -16,7 +16,7 @@ import java.util.Calendar;
 /**
 * Created by rburgosnavas on 12/10/14.
 */
-class AuthTask extends AsyncTask<String, String, JsonObject> {
+public class AuthTask extends AsyncTask<String, String, JsonObject> {
     private static final String TAG = AuthTask.class.getSimpleName();
 
     private final TokenType tokenType;
@@ -27,39 +27,6 @@ class AuthTask extends AsyncTask<String, String, JsonObject> {
         this.context = context;
         this.tokenType = tokenType;
         this.authListener = authListener;
-    }
-
-    @Override
-    protected void onCancelled(JsonObject token) {
-        super.onCancelled(token);
-        authListener.onAuthCancelled();
-    }
-
-    @Override
-    protected void onProgressUpdate(String... values) {
-        super.onProgressUpdate(values);
-        authListener.onAuthProgress();
-    }
-
-    @Override
-    protected void onPostExecute(JsonObject token) {
-        super.onPostExecute(token);
-
-        SharedPreferences prefs = context.getSharedPreferences("OAUTH_PREFS", Context.MODE_PRIVATE);
-        SharedPreferences.Editor editor = prefs.edit();
-        editor.putString("ACCESS_TOKEN", token.get("access_token").getAsString());
-
-        Calendar c = Calendar.getInstance();
-        editor.putLong("ACCESS_TIMESTAMP", c.getTimeInMillis());
-
-        int time = token.get("expires_in").getAsInt();
-        c.set(Calendar.SECOND, time);
-
-        editor.putInt("EXPIRES_IN", time);
-        editor.putLong("EXPIRATION_TIMESTAMP", c.getTimeInMillis());
-        editor.putString("REFRESH_TOKEN", token.get("refresh_token").getAsString());
-        editor.apply();
-        authListener.onAuthPostExecute();
     }
 
     @Override
@@ -87,6 +54,39 @@ class AuthTask extends AsyncTask<String, String, JsonObject> {
         JsonObject j = new JsonParser().parse(bodyString).getAsJsonObject();
 
         return j;
+    }
+
+    @Override
+    protected void onProgressUpdate(String... values) {
+        super.onProgressUpdate(values);
+        authListener.onAuthProgress();
+    }
+
+    @Override
+    protected void onPostExecute(JsonObject token) {
+        super.onPostExecute(token);
+
+        SharedPreferences prefs = context.getSharedPreferences("OAUTH_PREFS", Context.MODE_PRIVATE);
+        SharedPreferences.Editor editor = prefs.edit();
+        editor.putString("ACCESS_TOKEN", token.get("access_token").getAsString());
+
+        Calendar c = Calendar.getInstance();
+        editor.putLong("ACCESS_TIMESTAMP", c.getTimeInMillis());
+
+        int time = 100; // token.get("expires_in").getAsInt();
+        c.set(Calendar.SECOND, time);
+
+        editor.putInt("EXPIRES_IN", time);
+        editor.putLong("EXPIRATION_TIMESTAMP", c.getTimeInMillis());
+        editor.putString("REFRESH_TOKEN", token.get("refresh_token").getAsString());
+        editor.apply();
+        authListener.onAuthPostExecute();
+    }
+
+    @Override
+    protected void onCancelled(JsonObject token) {
+        super.onCancelled(token);
+        authListener.onAuthCancelled();
     }
 
     /**

@@ -12,6 +12,7 @@ import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Environment;
 import android.os.IBinder;
+import android.support.annotation.NonNull;
 import android.support.v4.app.NotificationCompat;
 import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
@@ -38,7 +39,8 @@ import retrofit.client.Response;
 import retrofit.mime.TypedFile;
 
 
-public class MainActivity extends Activity implements ServiceConnection, RecentSoundsResultsReceiver.ResultsListener {
+public class MainActivity extends Activity implements ServiceConnection,
+        RecentSoundsResultsReceiver.ResultsListener {
     private static final String TAG = MainActivity.class.getSimpleName();
 
     private RecentSoundsService recentSoundsService;
@@ -85,15 +87,15 @@ public class MainActivity extends Activity implements ServiceConnection, RecentS
         downloadBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Intent i = new Intent(getApplicationContext(), DownloadService.class);
-                i.putExtra("ACCESS_TOKEN", prefs.getString("ACCESS_TOKEN", ""));
+                Intent intent = new Intent(getApplicationContext(), DownloadService.class);
+                intent.putExtra("ACCESS_TOKEN", prefs.getString("ACCESS_TOKEN", ""));
 
                 // Hard coding the user name, pack, and sound to download for testing purposes.
-                i.putExtra("USER_NAME", "Freed");
-                i.putExtra("PACK_NAME", "83");
-                i.putExtra("SOUND_NAME", "180404d.mp3");
-                i.putExtra("SOUND_ID", "1234");
-                getApplicationContext().startService(i);
+                intent.putExtra("USER_NAME", "reinsamba");
+                intent.putExtra("PACK_NAME", "Zoo");
+                intent.putExtra("SOUND_NAME", "180404d.mp3");
+                intent.putExtra("SOUND_ID", "1234");
+                getApplicationContext().startService(intent);
             }
         });
 
@@ -108,10 +110,12 @@ public class MainActivity extends Activity implements ServiceConnection, RecentS
                                 new FreesoundRestClient(prefs.getString("ACCESS_TOKEN", ""));
                         FreesoundApiService ss = client.makeService();
 
-                        Response res = ss.uploadSound(new TypedFile("audio/mpeg",
-                                new File(Environment.getExternalStoragePublicDirectory(
-                                        Environment.DIRECTORY_DOWNLOADS),
-                                        "1234__freed__180404d.mp3")), null, null, null, null, null, null);
+                        File f = new File(Environment.getExternalStoragePublicDirectory(
+                                Environment.DIRECTORY_DOWNLOADS),
+                                "1234__freed__180404d.mp3");
+
+                        Response res = ss.uploadSound(new TypedFile("audio/mpeg", f),
+                                null, null, null, null, null, null);
 
                         Log.i(TAG, "UPLOAD-URL = " + res.getUrl());
                         Log.i(TAG, "UPLOAD-REASON = " + res.getReason());
@@ -132,7 +136,8 @@ public class MainActivity extends Activity implements ServiceConnection, RecentS
 
         // Register this activity to receive broadcasts for recent sounds.
         IntentFilter filter = new IntentFilter("RECENT_SOUNDS_RESULTS");
-        LocalBroadcastManager.getInstance(this).registerReceiver(recentSoundsResultsReceiver, filter);
+        LocalBroadcastManager.getInstance(this)
+                .registerReceiver(recentSoundsResultsReceiver, filter);
 
         // Bind this activity (application?) to the recent sounds service.
         Intent bindIntent = new Intent(this, RecentSoundsService.class);
@@ -182,12 +187,12 @@ public class MainActivity extends Activity implements ServiceConnection, RecentS
     }
 
     @Override
-    protected void onSaveInstanceState(Bundle outState) {
+    protected void onSaveInstanceState(@NonNull Bundle outState) {
         super.onSaveInstanceState(outState);
     }
 
     @Override
-    protected void onRestoreInstanceState(Bundle savedInstanceState) {
+    protected void onRestoreInstanceState(@NonNull Bundle savedInstanceState) {
         super.onRestoreInstanceState(savedInstanceState);
     }
 
@@ -200,12 +205,15 @@ public class MainActivity extends Activity implements ServiceConnection, RecentS
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         switch(item.getItemId()) {
-            case R.id.action_recent_sounds:NotificationCompat.Builder builder = new NotificationCompat.Builder(getApplicationContext())
+            case R.id.action_recent_sounds:
+                NotificationCompat.Builder builder =
+                        new NotificationCompat.Builder(getApplicationContext())
                     .setSmallIcon(R.drawable.ic_launcher)
                     .setContentTitle("DroidFS - Recent sounds")
                     .setContentText("Got new sounds!");
 
-                NotificationManager manager = (NotificationManager) getApplicationContext().getSystemService(Context.NOTIFICATION_SERVICE);
+                NotificationManager manager = (NotificationManager) getApplicationContext()
+                        .getSystemService(Context.NOTIFICATION_SERVICE);
                 manager.notify(607, builder.build());
                 return true;
             case R.id.action_me:

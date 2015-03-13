@@ -103,7 +103,11 @@ public class RecentSoundsService extends Service {
             @Override
             protected void onPostExecute(Result<Sound> result) {
                 super.onPostExecute(result);
-                Log.i(TAG, "\nrecent sounds received!\n\n");
+                if (result == null) {
+                    Log.w(TAG, "\nno recent sounds received!\nNo access_token found.\nNeed to login\n\n");
+                } else {
+                    Log.i(TAG, "\nrecent sounds received!\n\n");
+                }
 
                 // Broadcast back once we have results.
                 Intent test = new Intent("RECENT_SOUNDS_RESULTS");

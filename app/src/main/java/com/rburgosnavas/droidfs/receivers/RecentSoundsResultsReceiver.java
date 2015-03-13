@@ -16,8 +16,8 @@ public class RecentSoundsResultsReceiver extends BroadcastReceiver {
     public RecentSoundsResultsReceiver() { }
 
     public void setResultsListener(ResultsListener listener) {
-        // Set up the listener here and not in the constructor because a default constructor with no arguments
-        // is needed.
+        // Set up the listener here and not in the constructor because a default constructor with
+        // no arguments is needed.
         this.listener = listener;
     }
 
@@ -29,13 +29,15 @@ public class RecentSoundsResultsReceiver extends BroadcastReceiver {
         // Notify whoever implements ResultsListener that we have data.
         listener.onResultsReceive(context, intent);
 
+        // TODO - re-enable vibration later (make it less annoying).
         NotificationCompat.Builder builder = new NotificationCompat.Builder(context)
                 .setSmallIcon(R.drawable.ic_launcher)
                 .setContentTitle("DroidFS - Recent sounds")
                 .setContentText("Got new sounds!")
-                .setVibrate(new long[]{0, 200, 1000});
+                /*.setVibrate(new long[]{0, 200, 1000})*/;
 
-        NotificationManager manager = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
+        NotificationManager manager =
+                (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
         manager.notify(607, builder.build());
     }
 
