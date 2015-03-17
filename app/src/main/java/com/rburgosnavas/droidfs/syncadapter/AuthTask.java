@@ -66,20 +66,25 @@ public class AuthTask extends AsyncTask<String, String, JsonObject> {
     protected void onPostExecute(JsonObject token) {
         super.onPostExecute(token);
 
-        SharedPreferences prefs = context.getSharedPreferences("OAUTH_PREFS", Context.MODE_PRIVATE);
+        SharedPreferences prefs = context.getSharedPreferences("OAUTH_PREFS", Context.MODE_MULTI_PROCESS);
         SharedPreferences.Editor editor = prefs.edit();
         editor.putString("ACCESS_TOKEN", token.get("access_token").getAsString());
 
         Calendar c = Calendar.getInstance();
         editor.putLong("ACCESS_TIMESTAMP", c.getTimeInMillis());
 
-        int time = 100; // token.get("expires_in").getAsInt();
+        int time = token.get("expires_in").getAsInt();
         c.set(Calendar.SECOND, time);
+
+        // TODO: remove, only for testing
+        c.add(Calendar.HOUR, -23);
+        c.add(Calendar.MINUTE, -50);
 
         editor.putInt("EXPIRES_IN", time);
         editor.putLong("EXPIRATION_TIMESTAMP", c.getTimeInMillis());
         editor.putString("REFRESH_TOKEN", token.get("refresh_token").getAsString());
         editor.apply();
+
         authListener.onAuthPostExecute();
     }
 

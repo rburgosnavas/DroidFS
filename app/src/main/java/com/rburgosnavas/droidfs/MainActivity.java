@@ -70,7 +70,7 @@ public class MainActivity extends Activity implements ServiceConnection,
 
         ScheduledRecentSoundsReceiver.scheduleAlarm(this);
 
-        prefs = getApplicationContext().getSharedPreferences("OAUTH_PREFS", Context.MODE_PRIVATE);
+        prefs = getApplicationContext().getSharedPreferences("OAUTH_PREFS", Context.MODE_MULTI_PROCESS);
 
         // If the app is started for the first time, there will be no access token.
         // The application will need to start a login activity to have the user login. This way the

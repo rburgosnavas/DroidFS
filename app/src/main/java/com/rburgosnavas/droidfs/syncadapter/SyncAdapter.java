@@ -7,6 +7,8 @@ import android.content.ContentProviderClient;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.content.SyncResult;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.v4.app.NotificationCompat;
@@ -31,20 +33,58 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter{
     public SyncAdapter(Context context, boolean autoInitialize) {
         super(context, autoInitialize);
         Log.i(TAG, "sync adapter created");
-        prefs = context.getSharedPreferences("OAUTH_PREFS", Context.MODE_PRIVATE);
+        prefs = context.getSharedPreferences("OAUTH_PREFS", Context.MODE_MULTI_PROCESS);
     }
 
     public SyncAdapter(Context context, boolean autoInitialize,
                        boolean allowParallelSyncs) {
         super(context, autoInitialize, allowParallelSyncs);
         Log.i(TAG, "sync adapter created");
-        prefs = context.getSharedPreferences("OAUTH_PREFS", Context.MODE_PRIVATE);
+        prefs = context.getSharedPreferences("OAUTH_PREFS", Context.MODE_MULTI_PROCESS);
     }
 
     @Override
     public void onPerformSync(Account account, Bundle extras, String authority,
                               ContentProviderClient provider, SyncResult syncResult) {
         Log.w(TAG, "performing sync");
+
+        ConnectivityManager cm =
+                (ConnectivityManager) getContext().getSystemService(Context.CONNECTIVITY_SERVICE);
+        NetworkInfo ni = cm.getActiveNetworkInfo();
+
+        Log.i(TAG, "Current network info: " + ni);
+
+        boolean isConnected = ni != null && ni.isConnected();
+
+        if (!isConnected) {
+            Log.e(TAG, "Network not connected.\nNo data will be pulled.");
+
+            NotificationCompat.Builder builder = new NotificationCompat
+                    .Builder(getContext())
+                    .setSmallIcon(R.drawable.ic_launcher)
+                    .setContentTitle("DroidFS - Warning")
+                    .setContentText("Network not connected!")
+                    /*.setVibrate(new long[]{0, 2000, 1000})*/;
+
+            NotificationManager manager = (NotificationManager) getContext()
+                    .getSystemService(Context.NOTIFICATION_SERVICE);
+            manager.notify(606, builder.build());
+
+            return;
+        } else {
+            Log.i(TAG, "Network is connected.\n");
+
+            NotificationCompat.Builder builder = new NotificationCompat
+                    .Builder(getContext())
+                    .setSmallIcon(R.drawable.ic_launcher)
+                    .setContentTitle("DroidFS - Syncing")
+                    .setContentText("Performing syncing of account")
+                    /*.setVibrate(new long[]{0, 2000, 1000})*/;
+
+            NotificationManager manager = (NotificationManager) getContext()
+                    .getSystemService(Context.NOTIFICATION_SERVICE);
+            manager.notify(606, builder.build());
+        }
 
         if (!prefs.contains("ACCESS_TOKEN")) {
             Log.e(TAG, "No ACCESS_TOKEN found!");
@@ -93,14 +133,18 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter{
                         editor.putLong("ACCESS_TIMESTAMP", c.getTimeInMillis());
                         Log.i(TAG, "new token accessed on " + c.getTime());
 
-                        // int time = 100;
                         int time = token.get("expires_in").getAsInt();
                         c.set(Calendar.SECOND, time);
+
+                        // TODO: remove, only for testing
+                        c.add(Calendar.HOUR, -23);
+                        c.add(Calendar.MINUTE, -50);
 
                         editor.putInt("EXPIRES_IN", time);
                         editor.putLong("EXPIRATION_TIMESTAMP", c.getTimeInMillis());
                         editor.putString("REFRESH_TOKEN", token.get("refresh_token").getAsString());
                         editor.apply();
+
                         Log.i(TAG, "new token saved (will expire on " + c.getTime() + ")");
 
                         NotificationCompat.Builder builder = new NotificationCompat

@@ -8,7 +8,10 @@ import android.database.sqlite.SQLiteOpenHelper;
  * Created by rburgosnavas on 12/24/14.
  */
 public class FreesoundDatabaseOpenHelper extends SQLiteOpenHelper {
-    public FreesoundDatabaseOpenHelper(Context context, String name, SQLiteDatabase.CursorFactory factory, int version) {
+    public FreesoundDatabaseOpenHelper(Context context,
+                                       String name,
+                                       SQLiteDatabase.CursorFactory factory,
+                                       int version) {
         super(context, name, factory, version);
     }
 

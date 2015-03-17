@@ -43,7 +43,7 @@ public class SyncUtils {
             ContentResolver.setSyncAutomatically(account,
                     context.getString(R.string.sync_adapter_authority), true);
             ContentResolver.addPeriodicSync(account,
-                    context.getString(R.string.sync_adapter_authority), bundle, 120);
+                    context.getString(R.string.sync_adapter_authority), bundle, 120 );
             Log.i(TAG, "added periodically");
         } else {
             bundle.putBoolean(ContentResolver.SYNC_EXTRAS_MANUAL, true);

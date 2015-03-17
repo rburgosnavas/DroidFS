@@ -1,15 +1,20 @@
 package com.rburgosnavas.droidfs.services;
 
+import android.app.NotificationManager;
 import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.os.AsyncTask;
 import android.os.Binder;
 import android.os.IBinder;
+import android.support.v4.app.NotificationCompat;
 import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
 
+import com.rburgosnavas.droidfs.R;
 import com.rburgosnavas.droidfs.clients.FreesoundRestClient;
 import com.rburgosnavas.droidfs.httpservices.FreesoundApiService;
 import com.rburgosnavas.droidfs.models.Result;
@@ -66,21 +71,48 @@ public class RecentSoundsService extends Service {
     public void getRecentSounds() {
         Log.i(TAG, "getting recent sounds");
 
+        ConnectivityManager cm =
+                (ConnectivityManager) getApplicationContext().getSystemService(Context.CONNECTIVITY_SERVICE);
+        NetworkInfo ni = cm.getActiveNetworkInfo();
+
+        Log.i(TAG, "Current network info: " + ni);
+
+        boolean isConnected = ni != null && ni.isConnected();
+
+        if (!isConnected) {
+            Log.e(TAG, "Network not connected.\nCould not retrieve sounds.");
+
+            NotificationCompat.Builder builder = new NotificationCompat
+                    .Builder(getApplicationContext())
+                    .setSmallIcon(R.drawable.ic_launcher)
+                    .setContentTitle("DroidFS - Warning")
+                    .setContentText("Network not connected! Could not retrieve sounds!")
+                    /*.setVibrate(new long[]{0, 2000, 1000})*/;
+
+            NotificationManager manager = (NotificationManager) getApplicationContext()
+                    .getSystemService(Context.NOTIFICATION_SERVICE);
+            manager.notify(607, builder.build());
+
+            return;
+        }
+
         new AsyncTask<Void, Void, Result<Sound>>() {
             private SharedPreferences prefs;
             @Override
             protected void onPreExecute() {
                 super.onPreExecute();
-                prefs = getApplicationContext().getSharedPreferences("OAUTH_PREFS", Context.MODE_PRIVATE);
+                prefs = getApplicationContext().getSharedPreferences("OAUTH_PREFS",
+                        Context.MODE_MULTI_PROCESS);
             }
 
             @Override
             protected Result<Sound> doInBackground(Void... params) {
                 String token = prefs.getString("ACCESS_TOKEN", "");
+                long expirationDate = prefs.getLong("EXPIRATION_TIMESTAMP", -1);
 
                 if ("".equals(token)) {
                     Log.w(TAG, "there is no token");
-                } else if (AuthUtils.isExpired(prefs.getLong("EXPIRATION_TIMESTAMP", -1))) {
+                } else if (AuthUtils.isExpired(expirationDate)) {
                     Log.w(TAG, "access_toke has expired.\nThis should be handled!!!!!\n");
                 } else {
                     Log.i(TAG, "access_token = " + token);
