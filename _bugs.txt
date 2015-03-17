@@ -1,0 +1,18 @@
+Use this file to keep track of bugs.
+***************************************************************************************************
+
+-------------------
+| BUGS            |
+-------------------
+| Keys:           |
+| * [IN_PROGRESS] |
+| * [BLOCKED]     |
+| * [DONE]        |
+-------------------
+
+*** App crashes when no network connection during sync [IN_PROGRESS]
+* Added some checks but I need to make additional tests. Not confident the tests are enough.
+* May need to add checks on the HTTP side
+
+*** SharePreferences have different values [DONE]
+* Changed to MODE_MULTI_PROCESS and seems to be working now

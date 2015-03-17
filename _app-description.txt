@@ -1,0 +1,134 @@
+Use this file to describe components and their work flow, etc. so as to know what everything is
+doing. That way it will be easier to get back to development without having to do too much guess
+work trying to find out how things are implemented.
+***************************************************************************************************
+
+RecentSoundsResultsReceiver
+---------------------------
+BroadcastReceiver contains a Notification which informs when new sounds have been received.
+Contains a inner ResultsListener interface that MainActivity implements to use its callback method
+to do something once data has been received. Uses a RECENT_SOUNDS_RESULTS IntentFilter: when
+RecentSoundsService finishes fetching data, it sends a broadcast with this IntentFilter.
+
+Currently is is registered by MainActivity in onResume() and unregistered in onPause().
+
+RecentSoundsService
+-------------------
+This is a bound service and it is started by StartRecentSoundsServiceReceiver. When the service is
+started, it checks for ACCESS_TOKEN stored stored in SharedPreference. If there is a valid token
+(there is a token and it is not expired), then gets recent sounds. It then stores these sounds
+somewhere so the application can have access to this data [not implemented]. Finally, it sends a
+broadcast with a RECENT_SOUNDS_RESULTS IntentFilter to notify that new data has been fetched and
+it's ready.
+
+Currently it is bound in MainActivity's onResume() and unbound in onPause().
+
+StartRecentSoundsServiceReceiver
+--------------------------------
+This BroadcastReceiver gets started by ScheduledRecentSoundsReceiver via an alarm service. It is
+in charge of starting RecentSoundsService.
+
+ScheduledRecentSoundsReceiver
+-----------------------------
+This BroadcastReceiver gets started when the application starts and consequently starts
+StartRecentSoundsServiceReceiver.
+
+* Note *
+Somehow this is a BroadcastReceiver but MainActivity calls
+ScheduledRecentSoundsReceiver.scheduleAlarm(this) instead of registering the broadcast and
+triggering scheduleAlarm(this) inside onReceive(...) - why???????
+
+DownloadService
+---------------
+This is an IntentService used to download sounds. It gets an Intent with ACCESS_TOKEN, USER_NAME,
+PACK_NAME, SOUND_NAME, and SOUND_ID, download the sound from a SOUND_ID, and writes the sound
+to directory using the other variables. Uses Source.writeSound(...) to perform the write.
+
+This service is to be started whenever downloading is needed.
+
+Source
+------
+Utility class used to write files to the system.
+
+HttpAuthClient
+--------------
+Helper class with methods to for creating forms, requests, responses, and getting ACCESS_TOKEN
+and REFRESH_TOKEN.
+
+FreesoundRestClient
+-------------------
+REST client for Freesound with a method to create a FreesoundApiService.
+
+FreesoundApiService
+-------------------
+Interface with all the functions to GET, POST, etc., Freesound data.
+
+====================================
+| Adapter Framework Implementation |
+====================================
+See http://developer.android.com/training/sync-adapter/index.html
+
+Authenticator
+-------------
+Stub Authenticator needed by sync adapter framework.
+
+AuthenticatorService
+--------------------
+Bound Service that instantiated the Authenticator when started. It access and returns the
+Authenticator's IBinder when it binds to the system.
+
+authenticator.xml
+-----------------
+Metadata that describes the Authenticator component. Describes an accountType
+"com.rburgosnavas.droidfs", plus icons and label that make this component visible to users.
+
+* Note *
+The AuthenticatorService and authenticator.xml metadata are declared in the
+manifest file.
+
+StubProvider
+------------
+Required by the framework. Does not do anything. It is registered in the manifest file as a
+<provider> with an exported flag set to false to avoid other apps to see it.
+
+SyncAdapter
+-----------
+Wraps the logic and data transfer for keeping an ACCESS_TOKEN valid. Uses an AsyncTask to preform
+the data transfer and store the result in SharedPreferences. Also displays a Notification to show
+results to user (so far only used here for debugging; may not be needed for production).
+
+SyncAdapter has a syncadapter.xml metadata with the correct sync adapter authority and sync
+account type.
+
+SyncService
+-----------
+Bound Service creates a synchronized singleton SyncAdapter. Passes an IBinder object from
+SyncAdapter to the framework, which then the framework can invoke SyncAdapter's onPerformSync().
+
+SyncService is registered in the manifest file with it's syncadapter.xml metadata.
+
+SyncUtils
+---------
+SyncUtils's single method createSyncAccount(...) is responsible for setting up an Account with the
+system. The flow is as follows:
+1) LoginActivity loads the login page and registers LoginWebViewClient.
+2) LoginWebViewClient gets the authorization code returned by the login page after a successful
+log in.
+3) Authorization code is passed to the OnAuthorizationCodeListener.onAuthorizationCode(...)
+4) Since LoginActivity implements OnAuthorizationCodeListener, it receives the authorization code
+from .onAuthorizationCode(...) which executes AuthTask with this code
+5) AuthTask gets the authorization code, checks if it needs an ACCESS_TOKEN or REFRESH_TOKEN, and
+uses the code to get the appropriate response
+6) The response gets stored in SharedPreferences and the AuthListener.onAuthPostExecute() method
+gets called
+7) Since LoginActivity also implements AuthListener, when onAuthPostExecute() gets called, it
+passes an Intent to the MainActivity with an Activity.RESULT_OK and destroys LoginActivity
+8) MainActivity gets this Intent, checks that result code is Activity.RESULT_OK and executes an
+AsyncTask
+9) The AsyncTask gets information about the user from the server and passes the username to
+SyncUtils.createSyncAccount(...)
+10) SyncUtils.createSyncAccount(...) creates an Account with the username and sync account type
+and adds the account explicitly to an AccountManager
+11) Runs the sync adapter with this Account and sync adapter authority
+
+

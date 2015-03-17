@@ -1,0 +1,31 @@
+Use this file to talk about how to implement, update, or debug parts of the app.
+===================================================================================================
+| DATABASE                                                                                        |
+===================================================================================================
+* user: store 'me' information
+* user_sounds: store 'me' sounds
+* user_packs: store 'me' packs
+* user_bookmark_categories: store 'me' bookmark categories
+
+===================================================================================================
+| PERSISTING RECENT SOUNDS AS A FEED                                                              |
+===================================================================================================
+* If app does not persist sounds, it will have to fetch every single time
+* Otherwise, the data fetched will need to live somewhere
+* I was thinking at first to just get recent sounds for a date range from N to current time. That
+is if I wanted to just display that current list of sounds and not allow the user to see more
+beyond that range.
+* Another solution would be the typical "feed" like Twitter, where the feed loads a number of
+sounds and load more as the user scrolls down the list (pagination)
+
+Some recent queries to use:
+* query=""&fields=id,name,tags,username,url,images&filter=created:[NOW-1DAY TO NOW]&sort=created_desc
+(current)
+* query=""&fields=id,name,username,images&filter=created:[* TO NOW]&sort=created_desc
+
+===================================================================================================
+| LOGIN FLOW                                                                                      |
+===================================================================================================
+* If user does not log in, then app should still function
+* No login page when app starts; add login button or menu option to login
+* Notify user when performing a function that requires login
