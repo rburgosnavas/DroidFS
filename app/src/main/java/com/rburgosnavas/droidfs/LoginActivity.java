@@ -24,6 +24,8 @@ public class LoginActivity extends Activity implements
         setContentView(R.layout.activity_login);
 
         WebView webView = (WebView) findViewById(R.id.webView);
+        webView.getSettings().setLoadWithOverviewMode(true);
+        webView.getSettings().setUseWideViewPort(true);
         webView.clearCache(true);
         webView.clearFormData();
         webView.clearHistory();
