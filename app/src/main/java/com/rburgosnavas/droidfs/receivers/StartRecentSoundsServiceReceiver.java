@@ -5,10 +5,10 @@ import android.content.Context;
 import android.content.Intent;
 import android.util.Log;
 
-import com.rburgosnavas.droidfs.services.RecentSoundsService;
+import com.rburgosnavas.droidfs.services.RecentSoundsIntentService;
 
 /**
- * This broadcast receiver gets started by ScheduledRecentSoundsReceiver via an alarm service.
+ * This broadcast receiver gets started by ScheduleRecentSoundsReceiver via an alarm service.
  */
 public class StartRecentSoundsServiceReceiver extends BroadcastReceiver {
     private static final String TAG = StartRecentSoundsServiceReceiver.class.getSimpleName();
@@ -17,11 +17,11 @@ public class StartRecentSoundsServiceReceiver extends BroadcastReceiver {
 
     @Override
     public void onReceive(Context context, Intent intent) {
-        Log.i(TAG, "receiving and starting RecentSoundsService");
+        Log.i(TAG, "receiving and starting RecentSoundsIntentService");
 
         // When this broadcast receiver get called, we immediately create an intent for the
-        // RecentSoundsService and then start that service.
-        Intent recentSoundsService = new Intent(context, RecentSoundsService.class);
+        // RecentSoundsIntentService and then start that service.
+        Intent recentSoundsService = new Intent(context, RecentSoundsIntentService.class);
         context.startService(recentSoundsService);
     }
 }

@@ -13,13 +13,13 @@ import java.io.IOException;
 import retrofit.client.Response;
 
 /**
- * DownloadService
+ * DownloadIntentService
  */
-public class DownloadService extends IntentService {
-    private static final String TAG = DownloadService.class.getSimpleName();
+public class DownloadIntentService extends IntentService {
+    private static final String TAG = DownloadIntentService.class.getSimpleName();
 
-    public DownloadService() {
-        super("DownloadService");
+    public DownloadIntentService() {
+        super("DownloadIntentService");
         Log.i(TAG, "service started");
     }
 

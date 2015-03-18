@@ -9,7 +9,6 @@ import android.content.SharedPreferences;
 import android.content.SyncResult;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
-import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.v4.app.NotificationCompat;
 import android.util.Log;
@@ -102,63 +101,62 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter{
 
             if (!"".equals(refreshToken)) {
                 Log.i(TAG, "getting new token from refresh_token");
+                Log.i(TAG, "attempting to get new token!");
 
-                new AsyncTask<String, String, JsonObject>() {
+                String bodyString = null;
+                try {
+                    Log.i(TAG, "getting refresh token");
+                    bodyString =
+                            HttpAuthClient.getRefreshToken(refreshToken).body().string();
+                    Log.i(TAG, "RESPONSE = " + bodyString);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
 
-                    @Override
-                    protected JsonObject doInBackground(String... params) {
-                        Log.i(TAG, "attempting to get new token!");
+                JsonObject token = new JsonParser().parse(bodyString).getAsJsonObject();
 
-                        String bodyString = null;
-                        try {
-                            Log.i(TAG, "getting refresh token");
-                            bodyString =
-                                    HttpAuthClient.getRefreshToken(params[0]).body().string();
-                            Log.i(TAG, "RESPONSE = " + bodyString);
-                        } catch (IOException e) {
-                            e.printStackTrace();
-                        }
+                SharedPreferences.Editor editor = prefs.edit();
 
-                        return new JsonParser().parse(bodyString).getAsJsonObject();
-                    }
+                // Check that the payload is not an error object; exit if it does.
+                // TODO: do something differently here, like maybe send an intent to the
+                // login activity...
+                if (token.has("error")) {
+                    Log.e(TAG, "ERROR = " + token.toString());
+                    return;
+                }
 
-                    @Override
-                    protected void onPostExecute(JsonObject token) {
-                        super.onPostExecute(token);
+                editor.putString("ACCESS_TOKEN", token.get("access_token").getAsString());
 
-                        SharedPreferences.Editor editor = prefs.edit();
-                        editor.putString("ACCESS_TOKEN", token.get("access_token").getAsString());
+                Calendar c = Calendar.getInstance();
+                editor.putLong("ACCESS_TIMESTAMP", c.getTimeInMillis());
+                Log.i(TAG, "new token accessed on " + c.getTime());
 
-                        Calendar c = Calendar.getInstance();
-                        editor.putLong("ACCESS_TIMESTAMP", c.getTimeInMillis());
-                        Log.i(TAG, "new token accessed on " + c.getTime());
+                int time = token.get("expires_in").getAsInt();
+                c.set(Calendar.SECOND, time);
 
-                        int time = token.get("expires_in").getAsInt();
-                        c.set(Calendar.SECOND, time);
+                // TODO: remove, only for testing
+                // Removing one hour from expiration timestamp so that the services starts
+                // getting a new token before current token expires (a precaution)
+                c.add(Calendar.HOUR, -1);
+                // c.add(Calendar.MINUTE, -50);
 
-                        // TODO: remove, only for testing
-                        c.add(Calendar.HOUR, -23);
-                        c.add(Calendar.MINUTE, -50);
+                editor.putInt("EXPIRES_IN", time);
+                editor.putLong("EXPIRATION_TIMESTAMP", c.getTimeInMillis());
+                editor.putString("REFRESH_TOKEN", token.get("refresh_token").getAsString());
+                editor.apply();
 
-                        editor.putInt("EXPIRES_IN", time);
-                        editor.putLong("EXPIRATION_TIMESTAMP", c.getTimeInMillis());
-                        editor.putString("REFRESH_TOKEN", token.get("refresh_token").getAsString());
-                        editor.apply();
+                Log.i(TAG, "new token saved (will expire on " + c.getTime() + ")");
 
-                        Log.i(TAG, "new token saved (will expire on " + c.getTime() + ")");
-
-                        NotificationCompat.Builder builder = new NotificationCompat
-                                .Builder(getContext())
-                                .setSmallIcon(R.drawable.ic_launcher)
-                                .setContentTitle("DroidFS - Sync complete")
-                                .setContentText("Access token will expire on " + c.getTime())
+                NotificationCompat.Builder builder = new NotificationCompat
+                        .Builder(getContext())
+                        .setSmallIcon(R.drawable.ic_launcher)
+                        .setContentTitle("DroidFS - Sync complete")
+                        .setContentText("Access token will expire on " + c.getTime())
                                     /*.setVibrate(new long[]{0, 2000, 1000})*/;
 
-                        NotificationManager manager = (NotificationManager) getContext()
-                                .getSystemService(Context.NOTIFICATION_SERVICE);
-                        manager.notify(606, builder.build());
-                    }
-                }.execute(refreshToken);
+                NotificationManager manager = (NotificationManager) getContext()
+                        .getSystemService(Context.NOTIFICATION_SERVICE);
+                manager.notify(606, builder.build());
             }
         } else if (!"".equals(accessCode)) {
             Log.i(TAG, "access_token=" + accessCode + " valid.");

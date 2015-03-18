@@ -55,8 +55,10 @@
                 android:resource="@xml/syncadapter" />
         </service>
 
-        <!-- Authenticator component
-        see http://developer.android.com/training/sync-adapter/index.html -->
+        <!--
+        Authenticator component
+        see http://developer.android.com/training/sync-adapter/index.html
+        -->
         <service android:name=".syncadapter.AuthenticatorService" >
             <intent-filter>
                 <action android:name="android.accounts.AccountAuthenticator" />
@@ -66,35 +68,29 @@
                 android:name="android.accounts.AccountAuthenticator"
                 android:resource="@xml/authenticator" />
         </service>
-
         <service
-            android:name=".services.DownloadService"
+            android:name=".services.DownloadIntentService"
             android:exported="false" >
         </service>
-
         <service
-            android:name=".services.RecentSoundsService"
-            android:enabled="true"
-            android:exported="true"
-            android:label="RecentSoundsService" >
+            android:name=".services.RecentSoundsIntentService"
+            android:exported="false" >
         </service>
 
         <!-- ******** Receivers ******** -->
         <receiver
-            android:name=".receivers.ScheduledRecentSoundsReceiver"
+            android:name=".receivers.ScheduleRecentSoundsReceiver"
             android:enabled="true"
             android:exported="true" >
             <intent-filter>
                 <action android:name="android.intent.action.BOOT_COMPLETED" />
             </intent-filter>
         </receiver>
-
         <receiver
             android:name=".receivers.StartRecentSoundsServiceReceiver"
             android:enabled="true"
             android:exported="true" >
         </receiver>
-
         <receiver
             android:name=".receivers.RecentSoundsResultsReceiver"
             android:enabled="true"
@@ -111,17 +107,16 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-
         <activity
             android:name=".RecentSoundsActivity"
             android:label="@string/title_activity_recent_sounds" >
         </activity>
-
         <activity
             android:name=".LoginActivity"
             android:label="@string/title_activity_login"
             android:windowSoftInputMode="adjustResize|stateHidden" >
         </activity>
+
     </application>
 
 </manifest>

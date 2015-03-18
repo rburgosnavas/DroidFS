@@ -68,6 +68,15 @@ public class AuthTask extends AsyncTask<String, String, JsonObject> {
 
         SharedPreferences prefs = context.getSharedPreferences("OAUTH_PREFS", Context.MODE_MULTI_PROCESS);
         SharedPreferences.Editor editor = prefs.edit();
+
+        // Check that the payload is not an error object; exit if it does.
+        // TODO: do something differently here, like maybe send an intent to the
+        // login activity...
+        if (token.has("error")) {
+            Log.e(TAG, "ERROR = " + token.getAsString());
+            return;
+        }
+
         editor.putString("ACCESS_TOKEN", token.get("access_token").getAsString());
 
         Calendar c = Calendar.getInstance();
@@ -77,8 +86,10 @@ public class AuthTask extends AsyncTask<String, String, JsonObject> {
         c.set(Calendar.SECOND, time);
 
         // TODO: remove, only for testing
-        c.add(Calendar.HOUR, -23);
-        c.add(Calendar.MINUTE, -50);
+        // Removing one hour from expiration timestamp so that the services starts getting a new
+        // token before current token expires (a precaution)
+        c.add(Calendar.HOUR, -1);
+        // c.add(Calendar.MINUTE, -50);
 
         editor.putInt("EXPIRES_IN", time);
         editor.putLong("EXPIRATION_TIMESTAMP", c.getTimeInMillis());

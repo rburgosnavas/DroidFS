@@ -16,3 +16,6 @@ Use this file to keep track of bugs.
 
 *** SharePreferences have different values [DONE]
 * Changed to MODE_MULTI_PROCESS and seems to be working now
+
+*** refresh_token seems to be invalid after so too many refreshes [IN_PROGRESS]
+* For now, I changed the refreshing to a few hours instead of minutes.

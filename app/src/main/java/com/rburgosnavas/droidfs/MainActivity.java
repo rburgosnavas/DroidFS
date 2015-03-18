@@ -28,9 +28,8 @@ import com.rburgosnavas.droidfs.models.Pack;
 import com.rburgosnavas.droidfs.models.Result;
 import com.rburgosnavas.droidfs.models.User;
 import com.rburgosnavas.droidfs.receivers.RecentSoundsResultsReceiver;
-import com.rburgosnavas.droidfs.receivers.ScheduledRecentSoundsReceiver;
-import com.rburgosnavas.droidfs.services.DownloadService;
-import com.rburgosnavas.droidfs.services.RecentSoundsService;
+import com.rburgosnavas.droidfs.receivers.ScheduleRecentSoundsReceiver;
+import com.rburgosnavas.droidfs.services.DownloadIntentService;
 import com.rburgosnavas.droidfs.utils.SyncUtils;
 
 import java.io.File;
@@ -39,11 +38,10 @@ import retrofit.client.Response;
 import retrofit.mime.TypedFile;
 
 
-public class MainActivity extends Activity implements ServiceConnection,
-        RecentSoundsResultsReceiver.ResultsListener {
+public class MainActivity extends Activity implements RecentSoundsResultsReceiver.ResultsListener {
     private static final String TAG = MainActivity.class.getSimpleName();
 
-    private RecentSoundsService recentSoundsService;
+    // private RecentSoundsService recentSoundsService;
     private RecentSoundsResultsReceiver recentSoundsResultsReceiver;
 
     private TextView tv, expTimeTv;
@@ -53,10 +51,6 @@ public class MainActivity extends Activity implements ServiceConnection,
     @Override
     protected void onStart() {
         super.onStart();
-
-        // TODO Is this the best way to start the RecentSoundService when the activity starts?
-        Intent recentSoundsService = new Intent(this, RecentSoundsService.class);
-        startService(recentSoundsService);
     }
 
     @Override
@@ -68,7 +62,7 @@ public class MainActivity extends Activity implements ServiceConnection,
         recentSoundsResultsReceiver = new RecentSoundsResultsReceiver();
         recentSoundsResultsReceiver.setResultsListener(this);
 
-        ScheduledRecentSoundsReceiver.scheduleAlarm(this);
+        ScheduleRecentSoundsReceiver.scheduleAlarm(this);
 
         prefs = getApplicationContext().getSharedPreferences("OAUTH_PREFS", Context.MODE_MULTI_PROCESS);
 
@@ -87,7 +81,7 @@ public class MainActivity extends Activity implements ServiceConnection,
         downloadBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Intent intent = new Intent(getApplicationContext(), DownloadService.class);
+                Intent intent = new Intent(getApplicationContext(), DownloadIntentService.class);
                 intent.putExtra("ACCESS_TOKEN", prefs.getString("ACCESS_TOKEN", ""));
 
                 // Hard coding the user name, pack, and sound to download for testing purposes.
@@ -138,10 +132,6 @@ public class MainActivity extends Activity implements ServiceConnection,
         IntentFilter filter = new IntentFilter("RECENT_SOUNDS_RESULTS");
         LocalBroadcastManager.getInstance(this)
                 .registerReceiver(recentSoundsResultsReceiver, filter);
-
-        // Bind this activity (application?) to the recent sounds service.
-        Intent bindIntent = new Intent(this, RecentSoundsService.class);
-        bindService(bindIntent, this, BIND_AUTO_CREATE);
     }
 
     @Override
@@ -149,10 +139,6 @@ public class MainActivity extends Activity implements ServiceConnection,
         super.onPause();
 
         LocalBroadcastManager.getInstance(this).unregisterReceiver(recentSoundsResultsReceiver);
-
-        if (recentSoundsService != null) {
-            unbindService(this);
-        }
     }
 
     @Override
@@ -251,16 +237,6 @@ public class MainActivity extends Activity implements ServiceConnection,
     }
 
     @Override
-    public void onServiceConnected(ComponentName name, IBinder service) {
-        recentSoundsService = ((RecentSoundsService.LocalBinder) service).getService();
-    }
-
-    @Override
-    public void onServiceDisconnected(ComponentName name) {
-        recentSoundsService = null;
-    }
-
-    @Override
     public void onResultsReceive(Context context, Intent intent) {
         // Once recent sounds have been fetched by the service, the service will notify
         // RecentSoundsResultsReceiver, which in turn will notify this activity via this callback
@@ -269,5 +245,6 @@ public class MainActivity extends Activity implements ServiceConnection,
         // In theory, the application will grab the recent sounds from persistence and display them
         // in the front end.
         Log.i(TAG, "received:\n" + intent);
+        Log.i(TAG, intent.getStringExtra("RECENT_SOUNDS_RESULTS_DATA"));
     }
 }

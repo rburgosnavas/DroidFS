@@ -12,10 +12,13 @@ import java.util.Calendar;
 /**
  * This is initiated when the application starts.
  */
-public class ScheduledRecentSoundsReceiver extends BroadcastReceiver {
-    private static final String TAG = ScheduledRecentSoundsReceiver.class.getSimpleName();
+public class ScheduleRecentSoundsReceiver extends BroadcastReceiver {
+    private static final String TAG = ScheduleRecentSoundsReceiver.class.getSimpleName();
 
-    public ScheduledRecentSoundsReceiver() { }
+    private static final int REQUEST_CODE = 606;
+    private static final long INTERVAL = 30 * 60 * 1000;
+
+    public ScheduleRecentSoundsReceiver() { }
 
     @Override
     public void onReceive(Context context, Intent intent) {
@@ -28,26 +31,24 @@ public class ScheduledRecentSoundsReceiver extends BroadcastReceiver {
     public static void scheduleAlarm(Context context) {
         Log.i(TAG, "scheduling alarm");
 
-        // Get the alarm manager service.
-        AlarmManager alarmManager = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
-
         // Set the intent that will start the next broadcast receiver in the chain.
         Intent intent = new Intent(context, StartRecentSoundsServiceReceiver.class);
 
         // Initiate the pending intent to be added to the alarm manager.
-        PendingIntent pendingIntent = PendingIntent.getBroadcast(context, 606, intent, PendingIntent.FLAG_CANCEL_CURRENT);
+        PendingIntent pendingIntent = PendingIntent.getBroadcast(context, REQUEST_CODE, intent,
+                PendingIntent.FLAG_CANCEL_CURRENT);
 
         // One minute.
         Calendar cal = Calendar.getInstance();
         cal.set(Calendar.MINUTE, 1);
 
+        // Get the alarm manager service.
+        AlarmManager alarmManager = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
+
         // Set the alarm so that it starts in 1 minute and triggers every 30 minutes.
-        // So, every 30 minutes it will hit StartRecentSoundsServiceReceiver which will start the
+        // Every 30 minutes it will hit StartRecentSoundsServiceReceiver which will start the
         // RecentSoundsService.
-        alarmManager.setRepeating(AlarmManager.RTC_WAKEUP,
-                cal.getTimeInMillis(),
-                30 * 60 * 1000,
-                // AlarmManager.INTERVAL_HALF_HOUR,
+        alarmManager.setRepeating(AlarmManager.RTC_WAKEUP, cal.getTimeInMillis(), INTERVAL,
                 pendingIntent);
     }
 }
