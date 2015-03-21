@@ -2,16 +2,13 @@ package com.rburgosnavas.droidfs;
 
 import android.app.Activity;
 import android.app.NotificationManager;
-import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
-import android.content.ServiceConnection;
 import android.content.SharedPreferences;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Environment;
-import android.os.IBinder;
 import android.support.annotation.NonNull;
 import android.support.v4.app.NotificationCompat;
 import android.support.v4.content.LocalBroadcastManager;
@@ -20,7 +17,6 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
-import android.widget.TextView;
 
 import com.rburgosnavas.droidfs.clients.FreesoundRestClient;
 import com.rburgosnavas.droidfs.httpservices.FreesoundApiService;
@@ -41,16 +37,22 @@ import retrofit.mime.TypedFile;
 public class MainActivity extends Activity implements RecentSoundsResultsReceiver.ResultsListener {
     private static final String TAG = MainActivity.class.getSimpleName();
 
-    // private RecentSoundsService recentSoundsService;
     private RecentSoundsResultsReceiver recentSoundsResultsReceiver;
 
-    private TextView tv, expTimeTv;
     private Button downloadBtn, uploadBtn;
     private SharedPreferences prefs;
 
     @Override
     protected void onStart() {
         super.onStart();
+
+        Log.i(TAG, "onStart()");
+
+        // This receiver will notify the activity when results have been fetched.
+        recentSoundsResultsReceiver = new RecentSoundsResultsReceiver();
+        recentSoundsResultsReceiver.setResultsListener(this);
+
+        ScheduleRecentSoundsReceiver.runAlarm(this);
     }
 
     @Override
@@ -58,13 +60,10 @@ public class MainActivity extends Activity implements RecentSoundsResultsReceive
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        // This receiver will notify the activity when results have been fetched.
-        recentSoundsResultsReceiver = new RecentSoundsResultsReceiver();
-        recentSoundsResultsReceiver.setResultsListener(this);
+        Log.i(TAG, "onCreate()");
 
-        ScheduleRecentSoundsReceiver.scheduleAlarm(this);
-
-        prefs = getApplicationContext().getSharedPreferences("OAUTH_PREFS", Context.MODE_MULTI_PROCESS);
+        prefs = getApplicationContext().getSharedPreferences("OAUTH_PREFS",
+                Context.MODE_MULTI_PROCESS);
 
         // If the app is started for the first time, there will be no access token.
         // The application will need to start a login activity to have the user login. This way the
@@ -73,9 +72,6 @@ public class MainActivity extends Activity implements RecentSoundsResultsReceive
             Intent loginIntent = new Intent(this, LoginActivity.class);
             startActivityForResult(loginIntent, 606);
         }
-
-        tv = (TextView) findViewById(R.id.tv);
-        expTimeTv = (TextView) findViewById(R.id.expTimeTv);
 
         downloadBtn = (Button) findViewById(R.id.downloadBtn);
         downloadBtn.setOnClickListener(new View.OnClickListener() {
@@ -128,6 +124,8 @@ public class MainActivity extends Activity implements RecentSoundsResultsReceive
     protected void onResume() {
         super.onResume();
 
+        Log.i(TAG, "onResume()");
+
         // Register this activity to receive broadcasts for recent sounds.
         IntentFilter filter = new IntentFilter("RECENT_SOUNDS_RESULTS");
         LocalBroadcastManager.getInstance(this)
@@ -137,6 +135,8 @@ public class MainActivity extends Activity implements RecentSoundsResultsReceive
     @Override
     protected void onPause() {
         super.onPause();
+
+        Log.i(TAG, "onPause()");
 
         LocalBroadcastManager.getInstance(this).unregisterReceiver(recentSoundsResultsReceiver);
     }
@@ -232,6 +232,9 @@ public class MainActivity extends Activity implements RecentSoundsResultsReceive
                     }
                 }.execute();
                 return true;
+            case R.id.action_tabbed_activity:
+                startActivity(new Intent(this, TabbedMainActivity.class));
+                return true;
         }
         return super.onOptionsItemSelected(item);
     }
@@ -244,7 +247,6 @@ public class MainActivity extends Activity implements RecentSoundsResultsReceive
         //
         // In theory, the application will grab the recent sounds from persistence and display them
         // in the front end.
-        Log.i(TAG, "received:\n" + intent);
-        Log.i(TAG, intent.getStringExtra("RECENT_SOUNDS_RESULTS_DATA"));
+        Log.i(TAG, "received: " + intent);
     }
 }

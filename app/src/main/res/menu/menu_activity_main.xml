@@ -18,4 +18,9 @@
         android:orderInCategory="98"
         app:showAsAction="never" />
 
+    <item android:id="@+id/action_tabbed_activity"
+        android:title="@string/action_tabbed_activity"
+        android:orderInCategory="97"
+        app:showAsAction="never" />
+
 </menu>

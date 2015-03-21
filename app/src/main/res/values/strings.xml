@@ -13,5 +13,12 @@
     <string name="action_refresh_token">Refresh Token</string>
     <string name="sync_adapter_authority">com.rburgosnavas.droifs.provider</string>
     <string name="sync_account_type">com.rburgosnavas.droifs</string>
+    <string name="title_activity_tabbed_main">TabbedMainActivity</string>
+
+
+    <string name="tab_recent_sounds">Recent Sounds</string>
+    <string name="tab_my_sounds">My Sounds</string>
+    <string name="tab_my_downloads">My Downloads</string>
+    <string name="action_tabbed_activity">Tabbed Activity</string>
 
 </resources>

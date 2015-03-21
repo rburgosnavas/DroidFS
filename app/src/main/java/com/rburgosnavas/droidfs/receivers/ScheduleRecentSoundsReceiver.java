@@ -25,10 +25,10 @@ public class ScheduleRecentSoundsReceiver extends BroadcastReceiver {
         Log.i(TAG, "receiving");
 
         // Start scheduling
-        scheduleAlarm(context);
+        runAlarm(context);
     }
 
-    public static void scheduleAlarm(Context context) {
+    public static void runAlarm(Context context) {
         Log.i(TAG, "scheduling alarm");
 
         // Set the intent that will start the next broadcast receiver in the chain.
@@ -38,16 +38,15 @@ public class ScheduleRecentSoundsReceiver extends BroadcastReceiver {
         PendingIntent pendingIntent = PendingIntent.getBroadcast(context, REQUEST_CODE, intent,
                 PendingIntent.FLAG_CANCEL_CURRENT);
 
-        // One minute.
+        // Now!
         Calendar cal = Calendar.getInstance();
-        cal.set(Calendar.MINUTE, 1);
 
         // Get the alarm manager service.
         AlarmManager alarmManager = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
 
-        // Set the alarm so that it starts in 1 minute and triggers every 30 minutes.
-        // Every 30 minutes it will hit StartRecentSoundsServiceReceiver which will start the
-        // RecentSoundsService.
+        // Set the alarm so that it starts immediately.
+        // Every 30 minutes it will trigger StartRecentSoundsServiceReceiver which will start the
+        // RecentSoundsIntentService.
         alarmManager.setRepeating(AlarmManager.RTC_WAKEUP, cal.getTimeInMillis(), INTERVAL,
                 pendingIntent);
     }

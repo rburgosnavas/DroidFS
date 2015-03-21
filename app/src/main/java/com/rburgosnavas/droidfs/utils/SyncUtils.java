@@ -15,8 +15,8 @@ import com.rburgosnavas.droidfs.R;
 public class SyncUtils {
     public static final String TAG = SyncUtils.class.getSimpleName();
 
-    private static final long HOURS = 1;
-    private static final long MINUTES = 1;
+    private static final long HOURS = 6;
+    private static final long MINUTES = 60;
     private static final long SECONDS = 60;
 
     /**

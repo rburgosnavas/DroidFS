@@ -1,4 +1,5 @@
 Use this file to talk about how to implement, update, or debug parts of the app.
+
 ===================================================================================================
 | DATABASE                                                                                        |
 ===================================================================================================
@@ -6,6 +7,13 @@ Use this file to talk about how to implement, update, or debug parts of the app.
 * user_sounds: store 'me' sounds
 * user_packs: store 'me' packs
 * user_bookmark_categories: store 'me' bookmark categories
+
+===================================================================================================
+| LOGIN FLOW                                                                                      |
+===================================================================================================
+* If user does not log in, then app should still function
+* No login page when app starts; add login button or menu option to login
+* Notify user when performing a function that requires login
 
 ===================================================================================================
 | PERSISTING RECENT SOUNDS AS A FEED                                                              |
@@ -24,8 +32,18 @@ Some recent queries to use:
 * query=""&fields=id,name,username,images&filter=created:[* TO NOW]&sort=created_desc
 
 ===================================================================================================
-| LOGIN FLOW                                                                                      |
+| RECENT SOUNDS LIST AND ADAPTER IMPLEMENTATION                                                   |
 ===================================================================================================
-* If user does not log in, then app should still function
-* No login page when app starts; add login button or menu option to login
-* Notify user when performing a function that requires login
+* The list will include a minimal set of data for each sound (name, username, image, etc.)
+* Each item will be clickable and a view will be loaded to display more options for a clicked item
+* The list will use endless scrolling to load more sounds when a threshold is passed; will use
+pagination
+* Will use pull to refresh to load more sounds
+* The list will be initialized with sounds once the app is loaded
+* Still not sure if this should be the first a user sees since freesound doesn't get that many new
+sounds that often (like Twitter feed, for example)
+* This list may be part of a tab view
+* See above for notes about persisting data for this list. With that in mind, I checked out the
+GitHub app and it doesn't seem to persist things like "news". Every time I access this view and
+scroll down, it hit a threshold and loads for data.
+

@@ -43,18 +43,6 @@ public class RecentSoundsIntentService extends IntentService {
 
         if (!isConnected) {
             Log.e(TAG, "Network not connected.\nCould not retrieve sounds.");
-
-            NotificationCompat.Builder builder = new NotificationCompat
-                    .Builder(getApplicationContext())
-                    .setSmallIcon(R.drawable.ic_launcher)
-                    .setContentTitle("DroidFS - Warning")
-                    .setContentText("Network not connected! Could not retrieve sounds!")
-                    /*.setVibrate(new long[]{0, 2000, 1000})*/;
-
-            NotificationManager manager = (NotificationManager) getApplicationContext()
-                    .getSystemService(Context.NOTIFICATION_SERVICE);
-            manager.notify(607, builder.build());
-
             return;
         }
 
@@ -76,10 +64,7 @@ public class RecentSoundsIntentService extends IntentService {
             FreesoundApiService service = new FreesoundRestClient(token).makeService();
 
             // Search results for a full day
-            result = service.getResults(
-                    "",
-                    "created:[NOW-1DAY TO NOW]",
-                    "id,name,tags,username,url,images",
+            result = service.getResults("", "created:[* TO NOW]", "id,name,username,images",
                     "created_desc");
         }
 

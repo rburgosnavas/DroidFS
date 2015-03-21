@@ -24,7 +24,7 @@ import com.rburgosnavas.droidfs.dummy.DummyContent;
  * Activities containing this fragment MUST implement the {@link OnFragmentInteractionListener}
  * interface.
  */
-public class SoundItemsFragment extends Fragment implements AbsListView.OnItemClickListener {
+public class RecentSoundsFragment extends Fragment implements AbsListView.OnItemClickListener {
 
     // TODO: Rename parameter arguments, choose names that match
     // the fragment initialization parameters, e.g. ARG_ITEM_NUMBER
@@ -49,8 +49,8 @@ public class SoundItemsFragment extends Fragment implements AbsListView.OnItemCl
     private ListAdapter mAdapter;
 
     // TODO: Rename and change types of parameters
-    public static SoundItemsFragment newInstance(String param1, String param2) {
-        SoundItemsFragment fragment = new SoundItemsFragment();
+    public static RecentSoundsFragment newInstance(String param1, String param2) {
+        RecentSoundsFragment fragment = new RecentSoundsFragment();
         Bundle args = new Bundle();
         args.putString(ARG_PARAM1, param1);
         args.putString(ARG_PARAM2, param2);
@@ -62,7 +62,7 @@ public class SoundItemsFragment extends Fragment implements AbsListView.OnItemCl
      * Mandatory empty constructor for the fragment manager to instantiate the
      * fragment (e.g. upon screen orientation changes).
      */
-    public SoundItemsFragment() {
+    public RecentSoundsFragment() {
     }
 
     @Override
@@ -75,21 +75,18 @@ public class SoundItemsFragment extends Fragment implements AbsListView.OnItemCl
         }
 
         // TODO: Change Adapter to display your content
-        mAdapter = new ArrayAdapter<DummyContent.DummyItem>(
-                getActivity(),
-                android.R.layout.simple_list_item_1,
-                android.R.id.text1,
-                DummyContent.ITEMS);
+        mAdapter = new ArrayAdapter<DummyContent.DummyItem>(getActivity(),
+                android.R.layout.simple_list_item_1, android.R.id.text1, DummyContent.ITEMS);
     }
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
-        View view = inflater.inflate(R.layout.fragment_sounditem, container, false);
+        View view = inflater.inflate(R.layout.fragment_recentsounditem, container, false);
 
         // Set the adapter
         mListView = (AbsListView) view.findViewById(android.R.id.list);
-        mListView.setAdapter(mAdapter);
+        ((AdapterView<ListAdapter>) mListView).setAdapter(mAdapter);
 
         // Set OnItemClickListener so we can be notified on item clicks
         mListView.setOnItemClickListener(this);
