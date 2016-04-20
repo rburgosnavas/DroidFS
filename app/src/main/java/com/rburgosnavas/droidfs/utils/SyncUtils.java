@@ -10,7 +10,7 @@ import android.util.Log;
 import com.rburgosnavas.droidfs.R;
 
 /**
- * Created by rburgosnavas on 12/15/14.
+ *
  */
 public class SyncUtils {
     public static final String TAG = SyncUtils.class.getSimpleName();
@@ -18,6 +18,8 @@ public class SyncUtils {
     private static final long HOURS = 6;
     private static final long MINUTES = 60;
     private static final long SECONDS = 60;
+
+    private SyncUtils() {}
 
     /**
      * 1 hour.

@@ -13,14 +13,17 @@ import android.os.Bundle;
 import android.support.v4.app.NotificationCompat;
 import android.util.Log;
 
-import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
 import com.rburgosnavas.droidfs.R;
-import com.rburgosnavas.droidfs.clients.HttpAuthClient;
+import com.rburgosnavas.droidfs.api.clients.HttpAuthClient;
+import com.rburgosnavas.droidfs.api.models.TokenType;
 import com.rburgosnavas.droidfs.utils.AuthUtils;
 
 import java.io.IOException;
 import java.util.Calendar;
+
+import rx.schedulers.Schedulers;
+
+import static com.rburgosnavas.droidfs.api.constants.Auth.*;
 
 /**
  * http://developer.android.com/training/sync-adapter/index.html
@@ -32,14 +35,15 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter{
     public SyncAdapter(Context context, boolean autoInitialize) {
         super(context, autoInitialize);
         Log.i(TAG, "sync adapter created");
-        prefs = context.getSharedPreferences("OAUTH_PREFS", Context.MODE_MULTI_PROCESS);
+        prefs = context.getSharedPreferences(OAUTH_PREFERENCES,
+                Context.MODE_MULTI_PROCESS);
     }
 
-    public SyncAdapter(Context context, boolean autoInitialize,
-                       boolean allowParallelSyncs) {
+    public SyncAdapter(Context context, boolean autoInitialize, boolean allowParallelSyncs) {
         super(context, autoInitialize, allowParallelSyncs);
         Log.i(TAG, "sync adapter created");
-        prefs = context.getSharedPreferences("OAUTH_PREFS", Context.MODE_MULTI_PROCESS);
+        prefs = context.getSharedPreferences(OAUTH_PREFERENCES,
+                Context.MODE_MULTI_PROCESS);
     }
 
     @Override
@@ -52,124 +56,93 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter{
         NetworkInfo ni = cm.getActiveNetworkInfo();
 
         Log.i(TAG, "Current network info: " + ni);
+        NotificationCompat.Builder builder = new NotificationCompat.Builder(getContext())
+                .setSmallIcon(R.drawable.ic_launcher);
 
-        boolean isConnected = ni != null && ni.isConnected();
+        NotificationManager manager = (NotificationManager) getContext()
+                .getSystemService(Context.NOTIFICATION_SERVICE);
 
-        if (!isConnected) {
-            Log.e(TAG, "Network not connected.\nNo data will be pulled.");
+        if (!(ni != null && ni.isConnected())) {
+            Log.e(TAG, "Network is not connected.");
 
-            NotificationCompat.Builder builder = new NotificationCompat
-                    .Builder(getContext())
-                    .setSmallIcon(R.drawable.ic_launcher)
-                    .setContentTitle("DroidFS - Warning")
-                    .setContentText("Network not connected!")
-                    /*.setVibrate(new long[]{0, 2000, 1000})*/;
-
-            NotificationManager manager = (NotificationManager) getContext()
-                    .getSystemService(Context.NOTIFICATION_SERVICE);
+            builder.setContentTitle("DroidFS - Warning")
+                    .setContentText("Network not connected");
             manager.notify(606, builder.build());
 
             return;
         } else {
-            Log.i(TAG, "Network is connected.\n");
+            Log.i(TAG, "Network is connected.");
 
-            NotificationCompat.Builder builder = new NotificationCompat
-                    .Builder(getContext())
-                    .setSmallIcon(R.drawable.ic_launcher)
-                    .setContentTitle("DroidFS - Syncing")
-                    .setContentText("Performing syncing of account")
-                    /*.setVibrate(new long[]{0, 2000, 1000})*/;
-
-            NotificationManager manager = (NotificationManager) getContext()
-                    .getSystemService(Context.NOTIFICATION_SERVICE);
-            manager.notify(606, builder.build());
+            builder.setContentTitle("DroidFS - Syncing")
+                    .setContentText("Syncing account");
         }
 
-        if (!prefs.contains("ACCESS_TOKEN")) {
-            Log.e(TAG, "No ACCESS_TOKEN found!");
+        manager.notify(606, builder.build());
+
+        if (!prefs.contains(ACCESS_TOKEN)) {
+            Log.e(TAG, "No access token found!");
             return;
         }
 
-        long expiration = prefs.getLong("EXPIRATION_TIMESTAMP", -1);
-        String accessCode = prefs.getString("ACCESS_TOKEN", "");
+        long expiration = prefs.getLong(EXPIRATION_TIMESTAMP, -1);
+        String accessCode = prefs.getString(ACCESS_TOKEN, "");
 
         if (AuthUtils.isExpired(expiration)) {
             Log.w(TAG, "access_token=" + accessCode + " expired.");
 
-            final String refreshToken = prefs.getString("REFRESH_TOKEN", "");
+            final String refreshToken = prefs.getString(REFRESH_TOKEN, "");
             Log.w(TAG, "using refresh_token=" + refreshToken + " to validate.");
 
             if (!"".equals(refreshToken)) {
                 Log.i(TAG, "getting new token from refresh_token");
                 Log.i(TAG, "attempting to get new token!");
 
-                String bodyString = null;
                 try {
-                    Log.i(TAG, "getting refresh token");
-                    bodyString =
-                            HttpAuthClient.getRefreshToken(refreshToken).body().string();
-                    Log.i(TAG, "RESPONSE = " + bodyString);
+                    HttpAuthClient.getAccessToken(refreshToken, TokenType.REFRESH_TOKEN)
+                            .observeOn(Schedulers.immediate())
+                            .subscribeOn(Schedulers.newThread())
+                            .subscribe(oAuthToken -> {
+                                SharedPreferences.Editor editor = getContext()
+                                        .getSharedPreferences(OAUTH_PREFERENCES,
+                                                Context.MODE_PRIVATE).edit();
+
+                                editor.putString(ACCESS_TOKEN, oAuthToken.getAccessToken());
+                                editor.putString(SCOPE, oAuthToken.getScope());
+                                editor.putLong(EXPIRES_IN, oAuthToken.getExpiresIn());
+                                editor.putString(REFRESH_TOKEN, oAuthToken.getRefreshToken());
+
+                                // Removing one hour from expiration timestamp so that the services starts
+                                // getting a new token before current token expires (a precaution)
+                                Calendar c = Calendar.getInstance();
+                                editor.putLong(ACCESS_TIMESTAMP, c.getTimeInMillis());
+                                c.set(Calendar.SECOND, (int) oAuthToken.getExpiresIn());
+                                c.add(Calendar.HOUR, -1);
+                                // c.add(Calendar.MINUTE, -50);
+
+                                editor.putLong(EXPIRATION_TIMESTAMP, c.getTimeInMillis());
+                                editor.apply();
+
+                                Log.i(TAG, "new token saved (will expire on " + c.getTime() + ")");
+                            }, t -> {
+
+                            }, () -> {
+                                NotificationCompat.Builder syncSuccessNotification =
+                                        new NotificationCompat.Builder(getContext())
+                                        .setSmallIcon(R.drawable.ic_launcher)
+                                        .setContentTitle("DroidFS - Sync complete")
+                                        .setContentText("Access token renewed");
+                                manager.notify(606, syncSuccessNotification.build());
+
+                            });
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
-
-                JsonObject token = new JsonParser().parse(bodyString).getAsJsonObject();
-
-                SharedPreferences.Editor editor = prefs.edit();
-
-                // Check that the payload is not an error object; exit if it does.
-                // TODO: do something differently here, like maybe send an intent to the
-                // login activity...
-                if (token.has("error")) {
-                    Log.e(TAG, "ERROR = " + token.toString());
-                    return;
-                }
-
-                editor.putString("ACCESS_TOKEN", token.get("access_token").getAsString());
-
-                Calendar c = Calendar.getInstance();
-                editor.putLong("ACCESS_TIMESTAMP", c.getTimeInMillis());
-                Log.i(TAG, "new token accessed on " + c.getTime());
-
-                int time = token.get("expires_in").getAsInt();
-                c.set(Calendar.SECOND, time);
-
-                // TODO: remove, only for testing
-                // Removing one hour from expiration timestamp so that the services starts
-                // getting a new token before current token expires (a precaution)
-                c.add(Calendar.HOUR, -1);
-                // c.add(Calendar.MINUTE, -50);
-
-                editor.putInt("EXPIRES_IN", time);
-                editor.putLong("EXPIRATION_TIMESTAMP", c.getTimeInMillis());
-                editor.putString("REFRESH_TOKEN", token.get("refresh_token").getAsString());
-                editor.apply();
-
-                Log.i(TAG, "new token saved (will expire on " + c.getTime() + ")");
-
-                NotificationCompat.Builder builder = new NotificationCompat
-                        .Builder(getContext())
-                        .setSmallIcon(R.drawable.ic_launcher)
-                        .setContentTitle("DroidFS - Sync complete")
-                        .setContentText("Access token will expire on " + c.getTime())
-                                    /*.setVibrate(new long[]{0, 2000, 1000})*/;
-
-                NotificationManager manager = (NotificationManager) getContext()
-                        .getSystemService(Context.NOTIFICATION_SERVICE);
-                manager.notify(606, builder.build());
             }
         } else if (!"".equals(accessCode)) {
             Log.i(TAG, "access_token=" + accessCode + " valid.");
 
-            NotificationCompat.Builder builder = new NotificationCompat
-                    .Builder(getContext())
-                    .setSmallIcon(R.drawable.ic_launcher)
-                    .setContentTitle("DroidFS - Sync complete")
-                    .setContentText("Access token is still valid")
-                        /*.setVibrate(new long[]{0, 200, 1000})*/;
-
-            NotificationManager manager = (NotificationManager) getContext()
-                    .getSystemService(Context.NOTIFICATION_SERVICE);
+            builder.setContentTitle("DroidFS - Sync complete")
+                    .setContentText("Access token is still valid");
             manager.notify(606, builder.build());
         } else {
             Log.w(TAG, "no access token found (need to log in)");

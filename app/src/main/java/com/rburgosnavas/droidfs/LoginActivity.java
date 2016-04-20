@@ -1,22 +1,37 @@
 package com.rburgosnavas.droidfs;
 
 import android.app.Activity;
+import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.webkit.WebView;
 
-import com.rburgosnavas.droidfs.clients.LoginWebViewClient;
-import com.rburgosnavas.droidfs.constants.Constants;
-import com.rburgosnavas.droidfs.exceptions.NullCallbackException;
-import com.rburgosnavas.droidfs.models.TokenType;
-import com.rburgosnavas.droidfs.syncadapter.AuthTask;
+import com.rburgosnavas.droidfs.api.clients.HttpAuthClient;
+import com.rburgosnavas.droidfs.api.constants.Api;
+import com.rburgosnavas.droidfs.api.models.TokenType;
+
+import java.io.IOException;
+import java.util.Calendar;
+
+import rx.android.schedulers.AndroidSchedulers;
+import rx.schedulers.Schedulers;
+
+import static com.rburgosnavas.droidfs.api.constants.Auth.ACCESS_TIMESTAMP;
+import static com.rburgosnavas.droidfs.api.constants.Auth.ACCESS_TOKEN;
+import static com.rburgosnavas.droidfs.api.constants.Auth.EXPIRATION_TIMESTAMP;
+import static com.rburgosnavas.droidfs.api.constants.Auth.EXPIRES_IN;
+import static com.rburgosnavas.droidfs.api.constants.Auth.OAUTH_PREFERENCES;
+import static com.rburgosnavas.droidfs.api.constants.Auth.REFRESH_TOKEN;
+import static com.rburgosnavas.droidfs.api.constants.Auth.SCOPE;
 
 
 public class LoginActivity extends Activity implements
-        LoginWebViewClient.OnAuthorizationCodeListener,
-        AuthTask.AuthListener {
+        LoginWebViewClient.OnAuthorizationCodeListener {
+    public static final String TAG = LoginActivity.class.getSimpleName();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -24,20 +39,19 @@ public class LoginActivity extends Activity implements
         setContentView(R.layout.activity_login);
 
         WebView webView = (WebView) findViewById(R.id.webView);
-        webView.getSettings().setLoadWithOverviewMode(true);
-        webView.getSettings().setUseWideViewPort(true);
-        webView.clearCache(true);
-        webView.clearFormData();
-        webView.clearHistory();
-        webView.getSettings().setSaveFormData(true);
 
-        try {
+        if (webView != null) {
+            webView.getSettings().setLoadWithOverviewMode(true);
+            webView.getSettings().setUseWideViewPort(true);
+            webView.clearCache(true);
+            webView.clearFormData();
+            webView.clearHistory();
+            webView.getSettings().setSaveFormData(true);
             webView.setWebViewClient(new LoginWebViewClient(this));
-        } catch (NullCallbackException e) {
-            e.printStackTrace();
+            webView.loadUrl(Api.FS_OAUTH_AUTH_QUERY);
+        } else {
+            Log.e(TAG, "webView null");
         }
-
-        webView.loadUrl(Constants.FS_OAUTH_AUTH_QUERY);
     }
 
     @Override
@@ -50,7 +64,6 @@ public class LoginActivity extends Activity implements
     public boolean onOptionsItemSelected(MenuItem item) {
         int id = item.getItemId();
 
-        //noinspection SimplifiableIfStatement
         if (id == R.id.action_settings) {
             return true;
         }
@@ -60,23 +73,50 @@ public class LoginActivity extends Activity implements
 
     @Override
     public void onAuthorizationCode(String authorizationCode) {
-        new AuthTask(getApplicationContext(), TokenType.ACCESS_TOKEN, this)
-                .execute(authorizationCode);
+        Log.i(TAG, "authorization code: " + authorizationCode);
+
+        try {
+            Log.i(TAG, "Getting access token...");
+            Intent userLoginIntent = new Intent(this, MainActivity.class);
+
+            HttpAuthClient.getAccessToken(authorizationCode, TokenType.ACCESS_TOKEN)
+                    .observeOn(AndroidSchedulers.mainThread())
+                    .subscribeOn(Schedulers.newThread())
+                    .subscribe(oAuthToken -> {
+                        Log.i(TAG, oAuthToken.toString());
+
+                        SharedPreferences.Editor editor = getApplicationContext()
+                                .getSharedPreferences(OAUTH_PREFERENCES,
+                                        Context.MODE_PRIVATE).edit();
+
+                        editor.putString(ACCESS_TOKEN, oAuthToken.getAccessToken());
+                        editor.putString(SCOPE, oAuthToken.getScope());
+                        editor.putLong(EXPIRES_IN, oAuthToken.getExpiresIn());
+                        editor.putString(REFRESH_TOKEN, oAuthToken.getRefreshToken());
+
+                        // Removing one hour from expiration timestamp so that the services starts
+                        // getting a new token before current token expires (a precaution)
+                        Calendar c = Calendar.getInstance();
+                        editor.putLong(ACCESS_TIMESTAMP, c.getTimeInMillis());
+                        c.set(Calendar.SECOND, (int) oAuthToken.getExpiresIn());
+                        c.add(Calendar.HOUR, -1);
+                        // c.add(Calendar.MINUTE, -50);
+
+                        editor.putLong(EXPIRATION_TIMESTAMP, c.getTimeInMillis());
+                        editor.apply();
+
+                        userLoginIntent.putExtra(ACCESS_TOKEN, oAuthToken.getAccessToken());
+                    }, throwable -> {
+                        Log.e(TAG, "Error getting access token: " + throwable);
+                    }, () -> {
+                        Log.i(TAG, "Done getting access token");
+                        Log.i(TAG, "Starting MainActivity...");
+
+                        setResult(Activity.RESULT_OK, userLoginIntent);
+                        finish();
+                    });
+        } catch (IOException e) {
+            Log.e(TAG, e.toString());
+        }
     }
-
-    @Override
-    public void onAuthPreExecute() { }
-
-    @Override
-    public void onAuthProgress() { }
-
-    @Override
-    public void onAuthPostExecute() {
-        Intent userLoginIntent = new Intent(this, MainActivity.class);
-        setResult(Activity.RESULT_OK, userLoginIntent);
-        finish();
-    }
-
-    @Override
-    public void onAuthCancelled() { }
 }

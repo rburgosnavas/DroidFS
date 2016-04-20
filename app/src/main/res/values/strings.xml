@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 
-    <string name="app_name">DroidFS</string>
+    <string name="app_name">LibreSounds</string>
     <string name="hello_world">Hello world!</string>
     <string name="action_settings">Settings</string>
     <string name="action_recent_sounds">Recent Sounds</string>
@@ -11,8 +11,8 @@
     <string name="hello_blank_fragment">Hello blank fragment</string>
     <string name="sound_img_description">sound image</string>
     <string name="action_refresh_token">Refresh Token</string>
-    <string name="sync_adapter_authority">com.rburgosnavas.droifs.provider</string>
-    <string name="sync_account_type">com.rburgosnavas.droifs</string>
+    <string name="sync_adapter_authority">com.rburgosnavas.droidfs.provider</string>
+    <string name="sync_account_type">com.rburgosnavas.droidfs</string>
     <string name="title_activity_tabbed_main">TabbedMainActivity</string>
 
 
@@ -20,5 +20,7 @@
     <string name="tab_my_sounds">My Sounds</string>
     <string name="tab_my_downloads">My Downloads</string>
     <string name="action_tabbed_activity">Tabbed Activity</string>
+    <string name="category_item_image">Category Item Image</string>
+    <string name="dummy_category_text">Dummy Category Text</string>
 
 </resources>

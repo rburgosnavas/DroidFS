@@ -90,9 +90,6 @@ public class Source {
      *                 be {@code null} or empty.
      *
      * @throws java.lang.NullPointerException if userName or fileName are null or empty
-     *
-     * @see retrofit.client.Response#getBody()
-     * @see retrofit.mime.TypedInput#in()
      */
     public static void writeSound(InputStream in, String userName, String packName,
                                   String fileName) {
